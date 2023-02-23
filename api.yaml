@@ -1,0 +1,368 @@
+openapi: 3.0.0
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/SABUDILOVSKIY_1/CourseWork/1.0.0
+info:
+  description: This is a simple API
+  version: "1.0.0"
+  title: Simple Inventory API
+  contact:
+    email: you@your-company.com
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+tags:
+  - name: admins
+    description: Secured Admin-only calls
+  - name: developers
+    description: Operations available to regular developers
+paths:
+  /register:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref : '#/components/schemas/UserCreditialsV1'
+      responses:
+        '200':
+          description: Создан новый пользователь
+          content:
+            application/json:
+              schema:
+                $ref : '#/components/schemas/AuthTokenV1'
+        '400':
+          description: Логин уже занят или пароль не удолетворяет требованиям
+          content:
+            application/json:
+              schema:
+                $ref : '#/components/schemas/ErrorV1'
+  /login:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref : '#/components/schemas/UserCreditialsV1'
+      responses:
+        '200':
+          description: Авторизация прозошла успешно
+          content:
+            application/json:
+              schema:
+                $ref : '#/components/schemas/AuthTokenV1'
+        '404':
+          description: Имя пользователя или пароль не верны
+          content:
+            application/json:
+              schema:
+                $ref : '#/components/schemas/ErrorV1'
+  /get-timetable:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LessonFilterV1'
+      responses:
+        '200':
+          description: Найденные пары
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LessonV1'
+  /lesson/add:
+    post:
+     parameters:
+        - in: cookie
+          name: authToken
+          required: true
+          schema:
+            type: string
+    requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref : '#/components/schemas/UserCreditialsV1'
+      
+  
+  /inventory:
+    get:
+      tags:
+        - developers
+      summary: searches inventory
+      operationId: searchInventory
+      description: |
+        By passing in the appropriate options, you can search for
+        available inventory in the system
+      parameters:
+        - in: query
+          name: searchString
+          description: pass an optional search string for looking up inventory
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: skip
+          description: number of records to skip for pagination
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+        - in: query
+          name: limit
+          description: maximum number of records to return
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            maximum: 50
+      responses:
+        '200':
+          description: search results matching criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryItem'
+        '400':
+          description: bad input parameter
+    post:
+      tags:
+        - admins
+      summary: adds an inventory item
+      operationId: addInventory
+      description: Adds an item to the system
+      responses:
+        '201':
+          description: item created
+        '400':
+          description: 'invalid input, object invalid'
+        '409':
+          description: an existing item already exists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItem'
+        description: Inventory item to add
+components:
+  schemas:
+    InventoryItem:
+      type: object
+      required:
+        - id
+        - name
+        - manufacturer
+        - releaseDate
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        name:
+          type: string
+          example: Widget Adapter
+        releaseDate:
+          type: string
+          format: date-time
+          example: '2016-08-29T09:12:33.001Z'
+        manufacturer:
+          $ref: '#/components/schemas/Manufacturer'
+    Manufacturer:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: ACME Corporation
+        homePage:
+          type: string
+          format: url
+          example: 'https://www.acme-corp.com'
+        phone:
+          type: string
+          example: 408-867-5309
+      type: object
+    UserCreditialsV1:
+      properties:
+        login:
+          type: string
+          example: 'some_nickname'
+        password:
+          type: string
+          example: 'some_password'
+      required: 
+        - login
+        - password  
+    TypeOfWeek:
+      type: integer
+      enum:
+        - 0
+        - 1
+        - 2
+    Subgroup:
+      type: integer
+      enum:
+        - 0
+        - 1
+        - 2
+    LessonV1:
+      properties:
+        room_id:
+          type: string
+        room_name:
+          type: string
+          example: '405П'
+          description: Номер аудитории
+        teacher_id:
+          type: string
+          example: 'some_id'
+        teacher_fio:
+          type: string
+          example: 'Иванов Иван Иванович'
+        subject_name:
+          type: string
+          example: 'Дифференциальные уравнения'
+        group_id:
+          type: string
+        group_name:
+          type: string
+        group_course:
+          type: string
+        week:
+          $ref: '#/components/schemas/TypeOfWeek'
+        subgroup:
+          $ref: '#/components/schemas/Subgroup'
+    TeacherV1:
+      properties:
+        fio:
+          type: string
+          example: 'Иванов Иван Иванович'
+        faculty_name:
+          type: string
+          example: 'ПММ'
+        department_name:
+          type: string
+          example: 'МОЭВМ'
+        faculty_id:
+          type: string
+          example: 'faculty_id'
+        department_id:
+          type: string
+          example: 'department_id'
+        bio:
+          type: string
+          example: 'Работаю 100500 лет, люблю ВГУ'
+    FacultyV1:
+      properties:
+        name:
+          type: string
+          example: 'ПММ'
+        dean_name:
+          type: string
+          example: 'Медведев'
+        dean_id:
+          type: string
+          example: '132131'
+    AuthTokenV1:
+      properties:
+        id:
+          type: string
+          example: '13123131dsadvsfasd'
+        expiration_date:
+          $ref: '#/components/schemas/Timestamp'
+    Timestamp:
+      type: string
+      example: '2010-02-10-08.15.000Z'
+    ErrorV1:
+      properties:
+        machine_id:
+          type: string
+          example: 'SMALL_PASSWORD'
+        description:
+          type: string
+          example: 'Password must have at least 10 symbols'
+    Day:
+      type: integer
+      enum:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+    NumberLesson:
+      type: integer
+      enum: 
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+    LessonFilterV1:
+      properties:
+        teacher_id:
+          type: string
+        teacher_fio:
+          type: string
+        subject_name:
+          type: string
+        room_name:
+          type: string
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/Day'
+        subgroup:
+          $ref: '#/components/schemas/Subgroup'
+        week:
+          $ref: '#/components/schemas/TypeOfWeek'
+        faculty_name:
+          type: string
+        faculty_id:
+          type: string
+        department_name:
+          type: string
+        department_id:
+          type: string
+        group_id:
+          type: string
+        group_name:
+          type: string
+        group_course:
+          type: string
+    AddLessonRequestV1:
+      properties:
+        subject_id:
+          type: string
+        number_lesson:
+          $ref : '#/components/schemas/NumberLesson'
+        room_id: 
+          type: string
+        start:
+          $ref: '#/components/schemas/Timestamp'
+        end:
+          $ref: '#/components/schemas/Timestamp'
+    MoveLessonRequestV1:
+      subject_id:
+          type: string
+      number_lesson:
+          $ref : '#/components/schemas/NumberLesson'
+      room_id: 
+        type: string
+      start:
+        $ref: '#/components/schemas/Timestamp'
+      end:
+        $ref: '#/components/schemas/Timestamp'
+        
