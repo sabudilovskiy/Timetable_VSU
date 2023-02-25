@@ -17,9 +17,15 @@ tags:
     description: Secured Admin-only calls
   - name: developers
     description: Operations available to regular developers
+  - name: teachers
+    description: Данные операции доступны для преподавателей, которые ведут соответствующую группу и соответствующий предмет
+  - name: users
+    description: Доступно всем
 paths:
   /register:
     post:
+      tags:
+        - users
       requestBody:
         required: true
         content:
@@ -41,6 +47,8 @@ paths:
                 $ref : '#/components/schemas/ErrorV1'
   /login:
     post:
+      tags:
+        - users
       requestBody:
         required: true
         content:
@@ -62,6 +70,8 @@ paths:
                 $ref : '#/components/schemas/ErrorV1'
   /get-timetable:
     post:
+      tags:
+        - users
       requestBody:
         required: true
         content:
@@ -79,119 +89,190 @@ paths:
                   $ref: '#/components/schemas/LessonV1'
   /lesson/add:
     post:
-     parameters:
-        - in: cookie
-          name: authToken
-          required: true
-          schema:
-            type: string
-    requestBody:
+      tags:
+        - teachers
+        - admins
+      requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref : '#/components/schemas/UserCreditialsV1'
-      
-  
-  /inventory:
-    get:
-      tags:
-        - developers
-      summary: searches inventory
-      operationId: searchInventory
-      description: |
-        By passing in the appropriate options, you can search for
-        available inventory in the system
+              $ref: '#/components/schemas/LessonAddRequestV1'
       parameters:
-        - in: query
-          name: searchString
-          description: pass an optional search string for looking up inventory
-          required: false
+        - in: cookie
+          name: authToken
+          required: true
           schema:
-            type: string
-        - in: query
-          name: skip
-          description: number of records to skip for pagination
-          schema:
-            type: integer
-            format: int32
-            minimum: 0
-        - in: query
-          name: limit
-          description: maximum number of records to return
-          schema:
-            type: integer
-            format: int32
-            minimum: 0
-            maximum: 50
+            $ref: '#/components/schemas/AuthTokenV1'
       responses:
         '200':
-          description: search results matching criteria
+          description: Пара успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonV1'
+        '401':
+          description: Отсутствует или истекший токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV1'
+        '403':
+          description: Нет прав на подобные изменения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV1'     
+                
+  /lesson/move:
+    post:
+      tags:
+        - teachers
+        - admins
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LessonMoveRequestV1'
+      parameters:
+        - in: cookie
+          name: authToken
+          required: true
+          schema:
+            $ref: '#/components/schemas/AuthTokenV1'
+      responses:
+        '200':
+          description: Пара успешно перемещена
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/InventoryItem'
-        '400':
-          description: bad input parameter
+                  $ref: '#/components/schemas/LessonV1'
+        '401':
+          description: Отсутствует или истекший токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV1'
+        '403':
+          description: Нет прав на подобные изменения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV1'   
+  /lesson/remove:
     post:
       tags:
         - admins
-      summary: adds an inventory item
-      operationId: addInventory
-      description: Adds an item to the system
-      responses:
-        '201':
-          description: item created
-        '400':
-          description: 'invalid input, object invalid'
-        '409':
-          description: an existing item already exists
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/InventoryItem'
-        description: Inventory item to add
+              $ref: '#/components/schemas/LessonMoveRequestV1'
+      parameters:
+        - in: cookie
+          name: authToken
+          required: true
+          schema:
+            $ref: '#/components/schemas/AuthTokenV1'
+      responses:
+        '200':
+          description: Пара успешно отменена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonV1'
+        '401':
+          description: Отсутствует или истекший токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV1'
+        '403':
+          description: Нет прав на подобные изменения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV1'
+  /admin/group/add:
+    post:
+      tags:
+        - admins
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupAddRequestV1'
+      parameters:
+        - in: cookie
+          name: authToken
+          required: true
+          schema:
+            $ref: '#/components/schemas/AuthTokenV1'
+      responses:
+        '200':
+          description: Группа успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupV1'
+        '401':
+          description: Отсутствует или истекший токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV1'
+        '403':
+          description: Нет прав на подобные изменения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV1'  
+  /admin/group/remove:
+    post:
+      tags:
+        - admins
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupRemoveRequestV1'
+      parameters:
+        - in: cookie
+          name: authToken
+          required: true
+          schema:
+            $ref: '#/components/schemas/AuthTokenV1'
+      responses:
+        '200':
+          description: Группа успешно удалена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupV1'
+        '401':
+          description: Отсутствует или истекший токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV1'
+        '403':
+          description: Нет прав на подобные изменения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV1'
+  # /admin/group/remove:
+  # /admin/group/lesson/add:
+  # /admin/group/lesson/remove:
+
 components:
   schemas:
-    InventoryItem:
-      type: object
-      required:
-        - id
-        - name
-        - manufacturer
-        - releaseDate
-      properties:
-        id:
-          type: string
-          format: uuid
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
-        name:
-          type: string
-          example: Widget Adapter
-        releaseDate:
-          type: string
-          format: date-time
-          example: '2016-08-29T09:12:33.001Z'
-        manufacturer:
-          $ref: '#/components/schemas/Manufacturer'
-    Manufacturer:
-      required:
-        - name
-      properties:
-        name:
-          type: string
-          example: ACME Corporation
-        homePage:
-          type: string
-          format: url
-          example: 'https://www.acme-corp.com'
-        phone:
-          type: string
-          example: 408-867-5309
-      type: object
     UserCreditialsV1:
       properties:
         login:
@@ -204,12 +285,14 @@ components:
         - login
         - password  
     TypeOfWeek:
+      description: 'Тип недели: 0 - всегда, 1 - только по числителю, 2 - только по знаменателю'
       type: integer
       enum:
         - 0
         - 1
         - 2
     Subgroup:
+      description: 'Тип подгруппы: 0 - для обеих, 1 - только для левой, 2 - только для правой'
       type: integer
       enum:
         - 0
@@ -218,7 +301,7 @@ components:
     LessonV1:
       properties:
         room_id:
-          type: string
+          $ref: '#/components/schemas/Id'
         room_name:
           type: string
           example: '405П'
@@ -232,16 +315,18 @@ components:
         subject_name:
           type: string
           example: 'Дифференциальные уравнения'
+        group:
+          $ref: '#/components/schemas/GroupV1'
         group_id:
-          type: string
-        group_name:
-          type: string
-        group_course:
-          type: string
+          $ref: '#/components/schemas/Id'
         week:
           $ref: '#/components/schemas/TypeOfWeek'
         subgroup:
           $ref: '#/components/schemas/Subgroup'
+        start:
+          $ref: '#/components/schemas/Timestamp'
+        end:
+          $ref: '#/components/schemas/Timestamp'
     TeacherV1:
       properties:
         fio:
@@ -254,11 +339,9 @@ components:
           type: string
           example: 'МОЭВМ'
         faculty_id:
-          type: string
-          example: 'faculty_id'
+          $ref: '#/components/schemas/Id'
         department_id:
-          type: string
-          example: 'department_id'
+          $ref: '#/components/schemas/Id'
         bio:
           type: string
           example: 'Работаю 100500 лет, люблю ВГУ'
@@ -274,12 +357,9 @@ components:
           type: string
           example: '132131'
     AuthTokenV1:
-      properties:
-        id:
-          type: string
-          example: '13123131dsadvsfasd'
-        expiration_date:
-          $ref: '#/components/schemas/Timestamp'
+      description: 'Используется для аунтефикации пользователя. Передаем строго через куки'
+      allOf:
+        - $ref: '#/components/schemas/Id'
     Timestamp:
       type: string
       example: '2010-02-10-08.15.000Z'
@@ -342,7 +422,7 @@ components:
           type: string
         group_course:
           type: string
-    AddLessonRequestV1:
+    LessonAddRequestV1:
       properties:
         subject_id:
           type: string
@@ -354,15 +434,59 @@ components:
           $ref: '#/components/schemas/Timestamp'
         end:
           $ref: '#/components/schemas/Timestamp'
-    MoveLessonRequestV1:
-      subject_id:
+    LessonMoveRequestV1:
+      properties:
+        old_lesson_id: 
+          $ref: '#/components/schemas/Id'
+        subject_id:
+          $ref: '#/components/schemas/Id'
+        number_lesson:
+            $ref : '#/components/schemas/NumberLesson'
+        room_id: 
+          $ref: '#/components/schemas/Id'
+        start:
+          $ref: '#/components/schemas/Timestamp'
+        end:
+          $ref: '#/components/schemas/Timestamp'
+    LessonRemoveRequestV1:
+      properties:
+        lesson_id:
+          $ref: '#/components/schemas/Id'
+        start:
+          $ref: '#/components/schemas/Timestamp'
+        end:
+          $ref: '#/components/schemas/Timestamp'
+    EducationType:
+      type: string
+      enum:
+        - 'undergraduate'
+        - 'magistracy'
+        - 'magistracy'
+        - 'specialty'
+    GroupAddRequestV1:
+      properties:
+        group_name:
           type: string
-      number_lesson:
-          $ref : '#/components/schemas/NumberLesson'
-      room_id: 
-        type: string
-      start:
-        $ref: '#/components/schemas/Timestamp'
-      end:
-        $ref: '#/components/schemas/Timestamp'
-        
+          example: '62'
+        group_course:
+          type: integer
+          example: 3
+        group_type:
+          $ref: '#/components/schemas/EducationType'
+    GroupRemoveRequestV1:
+      properties:
+        group_id:
+          $ref: '#/components/schemas/Id'
+    GroupV1:
+      properties:
+        name:
+          type: string
+        course:
+          type: integer
+        type:
+          $ref: '#/components/schemas/EducationType'
+    Id:
+      description: 'UUID v4'
+      type: string
+      example: '6173575e-e86c-4c55-b43d-aa3ca6242181'
+    
